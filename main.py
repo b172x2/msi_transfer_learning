@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data import DataLoader
 #utils.py
-from utils import LoadDatasetFromFolder,data_loader_test, draw_curve
+from utils import LoadDatasetFromFolder,data_loader_test, draw_curve, generate_sample_label_set
 import numpy as np
 import random
 from train_options import parser
@@ -35,7 +35,13 @@ def seed_torch(seed=2022):
     torch.cuda.manual_seed(seed)
 seed_torch(2022)
 
-
+sample_exists=False
+data_path = "Data/CLCD_samples"
+if sample_exists:
+    training_samples,training_labels, val_samples, val_labels, test_samples, test_labels = load_training_set(data_path)
+else:
+    training_samples, training_labels,val_samples, val_labels, test_samples, test_labels = generate_sample_label_set(args.hr1_train,args.hr1_val,args.hr1_test,args.hr2_train, args.hr2_val, args.hr2_test,args.lab_train,args.lab_val,args.lab_test)
+    
 # 定义数据集和数据加载器
 train_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_train, hr2_path=args.hr2_train,lab_path=args.lab_train)
 val_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_val, hr2_path=args.hr2_val,lab_path=args.lab_val)

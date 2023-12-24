@@ -1,3 +1,4 @@
+import time
 import matplotlib.pyplot as plt
 import os
 from torch.utils.data import Dataset, DataLoader
@@ -116,3 +117,80 @@ def draw_curve(data, label, xlabel, ylabel, line, file_path=None, file_name=None
     plt.legend(loc='best')
     if file_name != None:
         plt.savefig(os.path.join(file_path, file_name))
+
+
+def generate_sample_label_set(hr1_train,hr1_val,hr1_test,hr2_train, hr2_val, hr2_test,lab_train,lab_val,lab_test):
+    print("generating_sample_label_set")
+    print('-------------------------------')
+
+    files = os.listdir(hr1_train)
+    image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg'))]
+    print(len(image_files)) #360
+    training_samples=np.zeros((len(image_files),262144, 3, 3, 6))
+    training_labels=np.zeros((len(image_files),262144,1))
+    print(training_samples.shape)
+    k=0
+    l=0
+    for file_name in files:
+        print(file_name)
+
+        hr1_file_path = os.path.join(hr1_train, file_name)
+        img=Image.open(hr1_file_path)
+        img_array = np.array(img)
+        print(img_array.shape)
+
+        hr2_file_path = os.path.join(hr2_train, file_name)
+        img_hr2=Image.open(hr2_file_path)
+        img2_array = np.array(img_hr2)
+        print(img2_array.shape)
+
+        label_file_path= os.path.join(lab_train, file_name)
+        img_label=Image.open(label_file_path)
+        label_array = np.array(img_label)
+        print(label_array.shape) #512x512x1
+        reshaped_label = label_array.reshape(-1, 1)
+
+        training_labels[l]=reshaped_label
+        l=l+1
+
+        concatenated_array = np.concatenate([img_array, img2_array], axis=-1)
+        print("Shape of concatenated_array:", concatenated_array.shape) #512x512x6
+        
+        padded_array = np.pad(concatenated_array, ((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0)
+        print("Shape of padded_array:", padded_array.shape)
+        print(padded_array[:,:,0]) #514x514x6
+        
+        window_size = (3, 3, 6)
+        original_shape = padded_array.shape
+        output_shape = ((original_shape[0] - window_size[0] + 1) *(original_shape[1] - window_size[1] + 1), *window_size)
+        output_array = np.zeros(output_shape)
+        index=0
+        for i in range(concatenated_array.shape[0]):
+            for j in range(concatenated_array.shape[1]):
+                sub_array = padded_array[i:i + window_size[0], j:j + window_size[1], :]
+                output_array[index, :, :, :] = sub_array
+                index = index + 1
+        print("Shape of output_array:", output_array.shape) #(262144, 3, 3, 6)
+        training_samples[k]=output_array
+        k = k+1
+    print(training_samples.shape)
+    merged_array = training_samples.reshape(-1, *training_samples.shape[2:])
+    print("Shape of merged_array:", merged_array.shape) #[total_samples,3,3,6],得到最后的training_samples!
+
+    print(training_labels.shape)
+    merged_label_array = training_labels.reshape(-1, 1)
+    print("Shape of merged_array:", merged_label_array.shape) #(94371840, 1)
+
+
+
+
+
+    #training_samples的shape应该是[total_samples,6,3,3]
+    #training_labels的shape应该是[total_samples,512*512]
+    training_samples=[]
+    training_labels=[]
+    val_samples=[]
+    val_labels=[]
+    test_samples=[]
+    test_labels=[]
+    return training_samples, training_labels, val_samples, val_labels, test_samples, test_labels
