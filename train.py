@@ -1,4 +1,5 @@
 import time
+import numpy as np
 import torch
 from torch.nn import Softmax
 
@@ -8,6 +9,7 @@ def train(dataloader, model, loss_fn, optimizer, device):
     model.train()
     total_loss = 0
     total_acc = 0
+    window_size = 3
     for batch,(X1,X2,y) in enumerate(dataloader):
         # print(X1.shape)
         # print(X2.shape)
@@ -18,24 +20,34 @@ def train(dataloader, model, loss_fn, optimizer, device):
         X_con = X_con.type(torch.FloatTensor)
         #X_con的shape是[batch_size,6,512,512]
         #先在X_con的外圈padding,X_con变成[batch_size, 6, 514,514]
+        X_con_padded = np.pad(X_con, ((0, 0), (0, 0), (1, 1), (1, 1)), mode='constant', constant_values=0)
+        # print(X_con.shape)
+        # print(X_con[0][1])
         #再把X_con切割成[batch_size,512*512,6,3,3](对514*514的图像做类似卷积的滑动窗口操作)
-
-        pred_tensor=[] #这里要初始化为[batchsize,512*512]
+        batch_size, num_channels, height, width = X_con_padded.shape
+        X_con_sliced = np.zeros((batch_size, height - window_size + 1, width - window_size + 1, num_channels, window_size, window_size))
+        #滑动窗口操作
+        for i in range(height - window_size + 1):
+            for j in range(width - window_size + 1):
+                X_con_sliced[:, i, j, :, :, :] = X_con_padded[:, :, i:i+window_size, j:j+window_size]
+        X_con_sliced_reshaped = X_con_sliced.reshape(batch_size, -1, num_channels, window_size, window_size)
+        # print(X_con_sliced_reshaped[0][0].shape) #(32, 262144, 6, 3, 3) #X_con_sliced_reshaped[0][0].shape=[6,3,3]
+        X_con_sliced_reshaped = torch.from_numpy(X_con_sliced_reshaped)
+        merged_tensor = X_con_sliced_reshaped.view(-1, 6, 3, 3)
+        # pred_tensor=np.zeros((batch_size,height,width)) #这里要初始化为[batchsize,512*512]
         # for i in range(batch_size):
-        #   for j in range(512*512):
-        #       pred=model(i,j)
-        #       pred_tensor.append(pred) #pred_tensor存放的是预测图的一维tensor
+        #     pred_per_batch_size=np.
+        #     for j in range(512*512):
+        #         pred=model(X_con_sliced_reshaped[i][j])
+        #     pred_tensor[i].append(pred) #pred_tensor存放的是预测图的一维tensor
+        pred_tensor=model(merged_tensor)
+        print(pred_tensor.shape)
 
         #pred_tensor的shape应该是[batchsize,512*512]
         #y的shape会review成[batch_size,512*512]
         #loss=loss_fn(pred,y)
 
         #model的输入是6x3x3的tensor,输出二分类结果1或0，代表变化和不变
-
-        #compute the prediction error
-        pred=model(X_con)
-
-        
         y=y.view(32, -1)
 
         loss=loss_fn(pred,y) #这里会对每个batch的样本算loss，再取平均，所以得到的是batch的平均loss

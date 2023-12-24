@@ -35,12 +35,13 @@ def seed_torch(seed=2022):
     torch.cuda.manual_seed(seed)
 seed_torch(2022)
 
+
 # 定义数据集和数据加载器
 train_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_train, hr2_path=args.hr2_train,lab_path=args.lab_train)
 val_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_val, hr2_path=args.hr2_val,lab_path=args.lab_val)
 test_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_test, hr2_path=args.hr2_test,lab_path=args.lab_test)
 
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 

@@ -61,13 +61,18 @@ class LoadDatasetFromFolder(Dataset):
 
     def __getitem__(self, index):
         hr1_img = self.transform(Image.open(self.hr1_filenames[index]).convert('RGB'))
+        # print(hr1_img.shape) #3,512,512
         hr2_img = self.transform(Image.open(self.hr2_filenames[index]).convert('RGB'))
         label = self.label_transform(Image.open(self.lab_filenames[index]))
+        # print(label.shape) #1,512,512
 
         return hr1_img, hr2_img, label
 
     def __len__(self):
         return len(self.hr1_filenames)
+
+
+
 
 def data_loader_test(train_dataloader):
     # 获取第一个批次的数据
