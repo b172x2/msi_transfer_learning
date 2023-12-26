@@ -157,12 +157,16 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
     files = os.listdir(hr1_train)
     image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg'))]
     print(len(image_files)) #360
-    training_samples=np.zeros((len(image_files),262144, 3, 3, 6)) 
-    training_labels=np.zeros((len(image_files),262144,1))
+    training_samples=np.zeros((len(image_files)//12,262144, 3, 3, 6)) 
+    training_labels=np.zeros((len(image_files)//12,262144,1))
     print(training_samples.shape)
     k=0
     l=0
+    filecnt = 0
     for file_name in files:
+        filecnt = filecnt + 1
+        if(filecnt == (len(image_files)//12) + 1):
+            break
         print(file_name)
 
         hr1_file_path = os.path.join(hr1_train, file_name)
@@ -206,14 +210,20 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
         k = k+1
     print(training_samples.shape)
     merged_array = training_samples.reshape(-1, *training_samples.shape[2:])
-    print("Shape of merged_array:", merged_array.shape) #[total_samples,3,3,6],得到最后的training_samples!
+    merged_array = np.transpose(merged_array, (0,3,2,1)) #->6,3,3
+    print("Shape of merged_array:", merged_array.shape) #[total_samples,6,3,3],得到最后的training_samples!
 
     print(training_labels.shape)
     merged_label_array = training_labels.reshape(-1, 1)
-    print("Shape of merged_array:", merged_label_array.shape) #(94371840, 1)
+    merged_label_array[merged_label_array == 255] = 1
+    new_array = np.zeros((merged_label_array.shape[0], 2))
+    new_array[merged_label_array[:, 0] == 1, 0] = 1
+    new_array[merged_label_array[:, 0] == 0, 1] = 1
+    print("Shape of merged_array:", new_array.shape) #(94371840, 2)
 
-    training_samples = merged_array
-    training_labels = merged_label_array
+
+    training_samples = merged_array 
+    training_labels = new_array
     return training_samples, training_labels
 
 

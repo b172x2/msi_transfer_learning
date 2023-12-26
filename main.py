@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data import DataLoader
 #utils.py
-from utils import LoadDatasetFromFolder,data_loader_test, draw_curve, generate_sample_label_set, load_sample_label_set, get_dataloader
+from utils import LoadDataset,data_loader_test, draw_curve, generate_sample_label_set, load_sample_label_set, get_dataloader
 import numpy as np
 import random
 from train_options import parser
@@ -21,8 +21,8 @@ from train import train, test
 from model import PretrainedResNet50
 
 args = parser.parse_args()
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 # torch.cuda.set_per_process_memory_fraction(0.7, device=0)
 torch.cuda.empty_cache()
 
@@ -42,7 +42,7 @@ is_exists = os.path.exists(os.path.join(data_path, 'training_samples.npy'))
 if is_exists:
     training_samples,training_labels, val_samples, val_labels, test_samples, test_labels = load_sample_label_set(data_path)
 else:
-    training_samples, training_labels,val_samples, val_labels, test_samples, test_labels = generate_sample_label_set(args.hr1_train,args.hr1_val,args.hr1_test,args.hr2_train, args.hr2_val, args.hr2_test,args.lab_train,args.lab_val,args.lab_test)
+    training_samples, training_labels, val_samples, val_labels, test_samples, test_labels = generate_sample_label_set(args.hr1_train,args.hr1_val,args.hr1_test,args.hr2_train, args.hr2_val, args.hr2_test,args.lab_train,args.lab_val,args.lab_test)
     
 # 定义数据集和数据加载器
 # train_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_train, hr2_path=args.hr2_train,lab_path=args.lab_train)
