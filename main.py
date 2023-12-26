@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data import DataLoader
 #utils.py
-from utils import LoadDatasetFromFolder,data_loader_test, draw_curve, generate_sample_label_set
+from utils import LoadDatasetFromFolder,data_loader_test, draw_curve, generate_sample_label_set, load_sample_label_set, get_dataloader
 import numpy as np
 import random
 from train_options import parser
@@ -37,20 +37,24 @@ seed_torch(2022)
 
 sample_exists=False
 data_path = "Data/CLCD_samples"
-if sample_exists:
-    training_samples,training_labels, val_samples, val_labels, test_samples, test_labels = load_training_set(data_path)
+is_exists = os.path.exists(os.path.join(data_path, 'training_samples.npy'))
+
+if is_exists:
+    training_samples,training_labels, val_samples, val_labels, test_samples, test_labels = load_sample_label_set(data_path)
 else:
     training_samples, training_labels,val_samples, val_labels, test_samples, test_labels = generate_sample_label_set(args.hr1_train,args.hr1_val,args.hr1_test,args.hr2_train, args.hr2_val, args.hr2_test,args.lab_train,args.lab_val,args.lab_test)
     
 # 定义数据集和数据加载器
-train_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_train, hr2_path=args.hr2_train,lab_path=args.lab_train)
-val_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_val, hr2_path=args.hr2_val,lab_path=args.lab_val)
-test_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_test, hr2_path=args.hr2_test,lab_path=args.lab_test)
+# train_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_train, hr2_path=args.hr2_train,lab_path=args.lab_train)
+# val_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_val, hr2_path=args.hr2_val,lab_path=args.lab_val)
+# test_dataset = LoadDatasetFromFolder(hr1_path=args.hr1_test, hr2_path=args.hr2_test,lab_path=args.lab_test)
 
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
+
+train_dataset, val_dataset, test_dataset = get_dataloader(training_samples, training_labels, val_samples, val_labels, test_samples, test_labels)
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
 # data_loader_test(train_dataloader)
 
 # 选择和加载预训练的ResNet模型
@@ -86,7 +90,7 @@ for epoch in range(100):
     val_loss_list.append(test_loss)
     val_acc_list.append(test_acc)
     stepLR.step()
-    
+    print(train_loss_list)
     draw_curve(train_loss_list, "Training Loss", "Epochs", "Loss", "b")
     draw_curve(val_loss_list,'Validation Loss', 'Epochs', 'Loss', 'r', args.result_path, 'loss.png')
     draw_curve(train_acc_list, 'Training accuracy', 'Epochs', 'Accuracy', 'b')

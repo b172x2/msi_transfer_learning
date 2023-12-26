@@ -47,31 +47,39 @@ def get_transform(convert=True, normalize=False):
     return transforms.Compose(transform_list)
 
 
-class LoadDatasetFromFolder(Dataset):
-    def __init__(self, hr1_path, hr2_path, lab_path):
-        super(LoadDatasetFromFolder, self).__init__()
+class LoadDataset(Dataset):
+    # def __init__(self, hr1_path, hr2_path, lab_path):
+    #     super(LoadDataset, self).__init__()
 
-        # 获取PNG图片列表
-        datalist = [name for name in os.listdir(hr1_path) if name.endswith('.png')]
-        self.hr1_filenames = [join(hr1_path, x) for x in datalist]
-        self.hr2_filenames = [join(hr2_path, x) for x in datalist]
-        self.lab_filenames = [join(lab_path, x) for x in datalist]
+    #     # 获取PNG图片列表
+    #     datalist = [name for name in os.listdir(hr1_path) if name.endswith('.png')]
+    #     self.hr1_filenames = [join(hr1_path, x) for x in datalist]
+    #     self.hr2_filenames = [join(hr2_path, x) for x in datalist]
+    #     self.lab_filenames = [join(lab_path, x) for x in datalist]
 
-        self.transform = ToTensor()
-        self.label_transform = ToTensor()
+    #     self.transform = ToTensor()
+    #     self.label_transform = ToTensor()
 
-    def __getitem__(self, index):
-        hr1_img = self.transform(Image.open(self.hr1_filenames[index]).convert('RGB'))
-        # print(hr1_img.shape) #3,512,512
-        hr2_img = self.transform(Image.open(self.hr2_filenames[index]).convert('RGB'))
-        label = self.label_transform(Image.open(self.lab_filenames[index]))
-        # print(label.shape) #1,512,512
+    # def __getitem__(self, index):
+    #     hr1_img = self.transform(Image.open(self.hr1_filenames[index]).convert('RGB'))
+    #     # print(hr1_img.shape) #3,512,512
+    #     hr2_img = self.transform(Image.open(self.hr2_filenames[index]).convert('RGB'))
+    #     label = self.label_transform(Image.open(self.lab_filenames[index]))
+    #     # print(label.shape) #1,512,512
 
-        return hr1_img, hr2_img, label
+    #     return hr1_img, hr2_img, label
+
+    # def __len__(self):
+    #     return len(self.hr1_filenames)
+    def __init__(self, samples, labels):
+        self.samples = samples
+        self.labels = labels
 
     def __len__(self):
-        return len(self.hr1_filenames)
+        return len(self.samples)
 
+    def __getitem__(self, index):
+        return self.samples[index], self.labels[index]
 
 
 
@@ -122,11 +130,34 @@ def draw_curve(data, label, xlabel, ylabel, line, file_path=None, file_name=None
 def generate_sample_label_set(hr1_train,hr1_val,hr1_test,hr2_train, hr2_val, hr2_test,lab_train,lab_val,lab_test):
     print("generating_sample_label_set")
     print('-------------------------------')
+    data_path = "Data/CLCD_samples"
+    # (94371840, 3, 3, 6) (94371840, 1)
+    training_samples, training_labels = generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train)
+    with open(os.path.join(data_path, 'training_samples.npy'),'bw') as outfile:
+        np.save(outfile, training_samples)
+    with open(os.path.join(data_path, 'training_labels.npy'),'bw') as outfile:
+        np.save(outfile, training_labels)
+    val_samples, val_labels = generate_TVT_sample_label_set(hr1_val,hr2_val,lab_val)
+    with open(os.path.join(data_path, 'val_samples.npy'),'bw') as outfile:
+        np.save(outfile, val_samples)
+    with open(os.path.join(data_path, 'val_labels.npy'),'bw') as outfile:
+        np.save(outfile, val_labels)
+    test_samples, test_labels = generate_TVT_sample_label_set(hr1_test, hr2_test, lab_test)
+    with open(os.path.join(data_path, 'test_samples.npy'),'bw') as outfile:
+        np.save(outfile, test_samples)
+    with open(os.path.join(data_path, 'test_labels.npy'),'bw') as outfile:
+        np.save(outfile, test_labels)
+    #training_samples的shape应该是[total_samples,6,3,3]
+    #training_labels的shape应该是[total_samples,1]
 
+    return training_samples, training_labels, val_samples, val_labels, test_samples, test_labels
+
+#train_val_test
+def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
     files = os.listdir(hr1_train)
     image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg'))]
     print(len(image_files)) #360
-    training_samples=np.zeros((len(image_files),262144, 3, 3, 6))
+    training_samples=np.zeros((len(image_files),262144, 3, 3, 6)) 
     training_labels=np.zeros((len(image_files),262144,1))
     print(training_samples.shape)
     k=0
@@ -181,16 +212,32 @@ def generate_sample_label_set(hr1_train,hr1_val,hr1_test,hr2_train, hr2_val, hr2
     merged_label_array = training_labels.reshape(-1, 1)
     print("Shape of merged_array:", merged_label_array.shape) #(94371840, 1)
 
+    training_samples = merged_array
+    training_labels = merged_label_array
+    return training_samples, training_labels
 
 
-
-
-    #training_samples的shape应该是[total_samples,6,3,3]
-    #training_labels的shape应该是[total_samples,512*512]
-    training_samples=[]
-    training_labels=[]
-    val_samples=[]
-    val_labels=[]
-    test_samples=[]
-    test_labels=[]
+def load_sample_label_set(datapath):
+    print('loading sample_label_set')
+    print('-------------------------------')
+    training_samples = np.load(os.path.join(datapath, 'training_samples.npy'))
+    training_labels = np.load(os.path.join(datapath, 'training_labels.npy'))
+    val_samples = np.load(os.path.join(datapath, 'val_samples.npy'))
+    val_labels = np.load(os.path.join(datapath, 'val_labels.npy'))
+    test_samples = np.load(os.path.join(datapath, 'test_samples.npy'))
+    test_labels = np.load(os.path.join(datapath, 'test_labels.npy'))
     return training_samples, training_labels, val_samples, val_labels, test_samples, test_labels
+
+
+def get_dataloader(training_samples, training_labels, val_samples, val_labels, test_samples, test_labels):
+    X_train = torch.from_numpy(training_samples)
+    y_train = torch.from_numpy(training_labels)
+    X_val = torch.from_numpy(val_samples)
+    y_val = torch.from_numpy(val_labels)
+    X_test = torch.from_numpy(test_samples)
+    y_test = torch.from_numpy(test_labels)
+    train_dataset = LoadDataset(X_train,y_train)
+    val_dataset = LoadDataset(X_val,y_val)
+    test_dataset = LoadDataset(X_test,y_test)
+
+    return train_dataset, val_dataset, test_dataset
