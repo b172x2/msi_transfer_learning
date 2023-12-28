@@ -52,9 +52,9 @@ else:
 
 
 train_dataset, val_dataset, test_dataset = get_dataloader(training_samples, training_labels, val_samples, val_labels, test_samples, test_labels)
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=128, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=128, shuffle=True)
 # data_loader_test(train_dataloader)
 
 # 选择和加载预训练的ResNet模型
@@ -79,7 +79,7 @@ val_loss_list = []
 val_acc_list = []
 
 start_time = time.time()
-for epoch in range(100):
+for epoch in range(10):
     """ Training  """
     print(f"Epoch {epoch + 1}\n-------------------------------")
     print("learning rate is set as: {}".format(optimizer.param_groups[0]['lr']))
@@ -90,17 +90,19 @@ for epoch in range(100):
     val_loss_list.append(test_loss)
     val_acc_list.append(test_acc)
     stepLR.step()
-    print(train_loss_list)
     draw_curve(train_loss_list, "Training Loss", "Epochs", "Loss", "b")
-    draw_curve(val_loss_list,'Validation Loss', 'Epochs', 'Loss', 'r', args.result_path, 'loss.png')
+    draw_curve(val_loss_list,'Validation Loss', 'Epochs', 'Loss', 'r', args.result_path, 'loss.png',False)
     draw_curve(train_acc_list, 'Training accuracy', 'Epochs', 'Accuracy', 'b')
-    draw_curve(val_acc_list, 'Validation accuracy', 'Epochs', 'Accuracy', 'r', args.result_path, 'accuracy.png')
-    
-torch.save(model.state_dict(), args.save_path)    
-#对test测试集进行测试
-
+    draw_curve(val_acc_list, 'Validation accuracy', 'Epochs', 'Accuracy', 'r', args.result_path, 'accuracy.png',False)
 print('Done!')
 print('-------------------------------')
+
+torch.save(model.state_dict(), args.save_path)    
+print('Testing!')
+print('-------------------------------')
+test_loss, test_acc = test(test_dataloader, model, loss_fn, device)
+
+
 
 
 
