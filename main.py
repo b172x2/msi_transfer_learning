@@ -35,8 +35,21 @@ def seed_torch(seed=2022):
     torch.cuda.manual_seed(seed)
 seed_torch(2022)
 
+
 sample_exists=False
 data_path = "Data/CLCD_samples"
+
+#删除samples的代码
+files = os.listdir(data_path)
+for file_name in files:
+    # 构建完整路径
+    file_path = os.path.join(data_path, file_name)
+
+    # 如果是文件，直接删除
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+print("所有文件已成功删除。")
+
 is_exists = os.path.exists(os.path.join(data_path, 'training_samples.npy'))
 
 if is_exists:
@@ -79,7 +92,7 @@ val_loss_list = []
 val_acc_list = []
 
 start_time = time.time()
-for epoch in range(10):
+for epoch in range(1):
     """ Training  """
     print(f"Epoch {epoch + 1}\n-------------------------------")
     print("learning rate is set as: {}".format(optimizer.param_groups[0]['lr']))

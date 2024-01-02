@@ -157,15 +157,16 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
     files = os.listdir(hr1_train)
     image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg'))]
     print(len(image_files)) #360
-    training_samples=np.zeros((len(image_files)//12,262144, 3, 3, 6)) 
-    training_labels=np.zeros((len(image_files)//12,262144,1))
+    set_samples_num = len(image_files)//120
+    training_samples=np.zeros((set_samples_num,262144, 3, 3, 6)) 
+    training_labels=np.zeros((set_samples_num,262144,1))
     print(training_samples.shape)
     k=0
     l=0
     filecnt = 0
     for file_name in files:
         filecnt = filecnt + 1
-        if(filecnt == (len(image_files)//12) + 1):
+        if(filecnt == (set_samples_num) + 1):
             break
         print(file_name)
 
@@ -251,3 +252,52 @@ def get_dataloader(training_samples, training_labels, val_samples, val_labels, t
     test_dataset = LoadDataset(X_test,y_test)
 
     return train_dataset, val_dataset, test_dataset
+
+
+
+#生成一副图像的sample
+def generate_one_sample_of_one_picture(hsi_t1,hsi_t2):
+    img=Image.open(hsi_t1) #hsi
+    img_array = np.array(img)
+
+    img_hr2=Image.open(hsi_t2)
+    img2_array = np.array(img_hr2)
+    #concatenate
+    concatenated_array = np.concatenate([img_array, img2_array], axis=-1) 
+    # print("Shape of concatenated_array:", concatenated_array.shape)
+    #padding
+    padded_array = np.pad(concatenated_array, ((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0)
+    # print("Shape of padded_array:", padded_array.shape)
+    # print(padded_array[:,:,0]) #514x514x6
+    #window_patching
+    window_size = (3, 3, 6)
+    original_shape = padded_array.shape
+    output_shape = ((original_shape[0] - window_size[0] + 1) *(original_shape[1] - window_size[1] + 1), *window_size)
+    output_array = np.zeros(output_shape)
+    index=0
+    for i in range(concatenated_array.shape[0]):
+        for j in range(concatenated_array.shape[1]):
+            sub_array = padded_array[i:i + window_size[0], j:j + window_size[1], :]
+            output_array[index, :, :, :] = sub_array
+            index = index + 1
+    transposed_array = np.transpose(output_array, (0,3,2,1))
+    return transposed_array
+
+
+    # print(training_samples.shape)
+    # merged_array = training_samples.reshape(-1, *training_samples.shape[2:])
+    # merged_array = np.transpose(merged_array, (0,3,2,1)) #->6,3,3
+    # print("Shape of merged_array:", merged_array.shape) #[total_samples,6,3,3],得到最后的training_samples!
+
+    # print(training_labels.shape)
+    # merged_label_array = training_labels.reshape(-1, 1)
+    # merged_label_array[merged_label_array == 255] = 1
+    # new_array = np.zeros((merged_label_array.shape[0], 2))
+    # new_array[merged_label_array[:, 0] == 1, 0] = 1
+    # new_array[merged_label_array[:, 0] == 0, 1] = 1
+    # print("Shape of merged_array:", new_array.shape) #(94371840, 2)
+
+
+    # training_samples = merged_array 
+    # training_labels = new_array
+    # return training_samples, training_labels

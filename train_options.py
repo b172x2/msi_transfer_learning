@@ -15,8 +15,8 @@ parser.add_argument('--img_size', default=512, type=int, help='imagesize')
 parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate for adam')
 
 # 结果保存路径
-parser.add_argument('--result_path', type=str, default="Result/CLCD", help='result path')
-parser.add_argument('--save_path', type=str, default="Model/CLCD", help='model save path')
+parser.add_argument('--result_path', type=str, default="Result/CLCD/", help='result path')
+parser.add_argument('--save_path', type=str, default="Model/CLCD/model.pth", help='model save path')
 
 # path for loading data from folder
 parser.add_argument('--hr1_train', default='Data/CLCD/train/time1', type=str, help='image at t1 in training set')
