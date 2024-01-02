@@ -1,20 +1,15 @@
-from torch.nn import Softmax
-import torch.nn as nn
-import torch
-# pred=torch.tensor([[0.1,0.2,0.3],[0.2,0.6,0.8]])
-# y=torch.tensor([[0.,1.,1.],[1.,1.,0.]])
-pred=torch.tensor([[0.1,0.2],[0.2,0.6]])
-y=torch.tensor([[0.,1.],[1.,0.]])
+from PIL import Image
+import numpy as np
+# 图像路径
 
-# pred=torch.tensor([0.,1.])
-# y=torch.tensor([0.,1.])
-print(pred)
-print(y)
-loss_fn = nn.CrossEntropyLoss()
-loss=loss_fn(pred,y) #这里会做softmax处理的！
-#这里loss的计算过程是对两个样本分别计算loss，再除以2取平均值
+hsi_gt = "Data/CLCD/train/label/00041.png"
+# 使用Pillow打开图像
 
-print(loss.item())
+images_gt = Image.open(hsi_gt)
 
-for i in range(1,10):
-    print(i)
+# 将图像转换为NumPy数组
+image_array = np.array(images_gt)
+image_array[image_array == 255] = 1
+# 输出图像矩阵的形状
+print("Image Sum:", image_array.sum())
+

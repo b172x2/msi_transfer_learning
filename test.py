@@ -16,9 +16,9 @@ save_path="Model/CLCD/model.pth"
 model.load_state_dict(torch.load(save_path))
 start = time.time()
 
-hsi_t1_path = "Data/CLCD/train/time1/00000.png"
-hsi_t2_path = "Data/CLCD/train/time2/00000.png"
-hsi_gt = "Data/CLCD/train/label/00000.png"
+hsi_t1_path = "Data/CLCD/train/time1/00041.png"
+hsi_t2_path = "Data/CLCD/train/time2/00041.png"
+hsi_gt = "Data/CLCD/train/label/00041.png"
 
 
 sample = generate_one_sample_of_one_picture(hsi_t1_path, hsi_t2_path)
@@ -37,12 +37,19 @@ img_array = np.array(img)
 img_array[img_array == 255] = 1
 
 print(img_array.shape)
-time.sleep(100)
 
-new_array = np.zeros((img_array.shape[0], 2))
-new_array[img_array[:, 0] == 1, 0] = 1
-new_array[img_array[:, 0] == 0, 1] = 1
-print("Shape of merged_array:", new_array.shape) #512,2
+reshape_tensor = img_array.reshape(-1,1)
+print(reshape_tensor.shape)
+
+
+print(img_array[0])
+print(reshape_tensor)
+
+new_array = np.zeros((reshape_tensor.shape[0], 2))
+new_array[reshape_tensor[:, 0] == 1, 0] = 1
+new_array[reshape_tensor[:, 0] == 0, 1] = 1
+print("Shape of merged_array:", new_array.shape) #(262144, 2)
+print(new_array) #所有的0变成0,1 所有的1变成1,0
 
 for i in range(small_tensors.shape[0]):
     # for j in range(small_tensors.shape[1]):
@@ -65,12 +72,46 @@ values_to_compare = new_array[:, 1]
 print(values_to_compare)
 values_to_compare = torch.tensor(values_to_compare)
 
-print(softmax_predictions.shape)
-print(values_to_compare.shape)
+print(softmax_predictions.shape) 
+print(values_to_compare.shape) 
 
 total_acc = total_acc + (softmax_predictions==values_to_compare).type(torch.float).sum().item()
-
 print(total_acc)
+size = values_to_compare.shape[0]
+print(f"预测的准确率为:{(total_acc/size)*100}%")
 
 end = time.time()
 print('Inference time is: {}'.format(end-start))
+
+print(softmax_predictions)
+hsi_pred = torch.where(softmax_predictions == 1, 0, 255)
+print(hsi_pred)
+print(hsi_pred.sum())
+hsi_pred = hsi_pred.reshape(512,512)
+
+import matplotlib.pyplot as plt
+#图像可视化
+hsi_t1_img = Image.open(hsi_t1_path)
+hsi_t2_img = Image.open(hsi_t2_path)
+hsi_gt_img = Image.open(hsi_gt)
+
+# 显示图像
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 4, 1)
+plt.imshow(hsi_t1_img)
+plt.title('Time 1')
+
+plt.subplot(1, 4, 2)
+plt.imshow(hsi_t2_img)
+plt.title('Time 2')
+
+plt.subplot(1, 4, 3)
+plt.imshow(hsi_gt_img)
+plt.title('Ground Truth')
+
+plt.subplot(1, 4, 4)
+plt.imshow(hsi_pred, cmap='viridis')  # 使用 viridis 色图显示预测结果
+plt.title('Predicted')
+
+plt.show()
