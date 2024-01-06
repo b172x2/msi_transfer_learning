@@ -8,6 +8,7 @@ from os.path import join
 import torch
 import numpy as np
 from torchvision.transforms import ToTensor
+from imblearn.over_sampling import RandomOverSampler
 # 可视化GROUND TRUTH和PRE_MASK图像
 # def pseudo_label_visualization(gt,pre_mask):
 #     plt.figure()
@@ -173,17 +174,17 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
         hr1_file_path = os.path.join(hr1_train, file_name)
         img=Image.open(hr1_file_path)
         img_array = np.array(img)
-        print(img_array.shape)
+        # print(img_array.shape) #512 512 3
 
         hr2_file_path = os.path.join(hr2_train, file_name)
         img_hr2=Image.open(hr2_file_path)
         img2_array = np.array(img_hr2)
-        print(img2_array.shape)
+        # print(img2_array.shape)
 
         label_file_path= os.path.join(lab_train, file_name)
         img_label=Image.open(label_file_path)
         label_array = np.array(img_label)
-        print(label_array.shape) #512x512x1
+        # print(label_array.shape) #512 512 1
         reshaped_label = label_array.reshape(-1, 1)
 
         training_labels[l]=reshaped_label
@@ -194,7 +195,7 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
         
         padded_array = np.pad(concatenated_array, ((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0)
         print("Shape of padded_array:", padded_array.shape)
-        print(padded_array[:,:,0]) #514x514x6
+        print(padded_array[:,:,0]) #514 514 6
         
         window_size = (3, 3, 6)
         original_shape = padded_array.shape
@@ -220,11 +221,28 @@ def generate_TVT_sample_label_set(hr1_train,hr2_train,lab_train):
     new_array = np.zeros((merged_label_array.shape[0], 2))
     new_array[merged_label_array[:, 0] == 1, 0] = 1
     new_array[merged_label_array[:, 0] == 0, 1] = 1
-    print("Shape of merged_array:", new_array.shape) #(94371840, 2)
+
 
 
     training_samples = merged_array 
     training_labels = new_array
+
+    print("Shape of training_samples:", training_samples.shape) #(786432, 6, 3, 3)
+    print(training_labels.shape) # (786432, 2)
+    #0, 1代表未变化，1, 0代表变化！！！
+    #对于image0来说 unchanged -- 782253, change -- 4179
+    print('num of training samples: unchanged -- {}, change -- {}'.format(np.sum(np.all(training_labels == [0, 1], axis=1)), np.sum(np.all(training_labels == [1, 0], axis=1))))
+    ros = RandomOverSampler(random_state=42)
+    training_samples = training_samples.reshape([training_samples.shape[0], -1])
+    training_samples, training_labels = ros.fit_resample(training_samples, training_labels)
+    training_samples = training_samples.reshape([training_samples.shape[0], 6, 3, 3])
+    # print(training_labels)
+    # print(training_labels.shape) #(1564506, 1)
+    # print(training_labels.sum()) #782253
+    training_labels = np.where(training_labels == 1, [1., 0.], [0., 1.])
+    # print(training_labels)
+    print('num of training samples after ros: unchanged -- {}, change -- {}'.format(np.sum(np.all(training_labels == [0, 1], axis=1)), np.sum(np.all(training_labels == [1, 0], axis=1))))
+
     return training_samples, training_labels
 
 
@@ -301,3 +319,15 @@ def generate_one_sample_of_one_picture(hsi_t1,hsi_t2):
     # training_samples = merged_array 
     # training_labels = new_array
     # return training_samples, training_labels
+
+
+def delete_all_samples(data_path):
+    files = os.listdir(data_path)
+    for file_name in files:
+        # 构建完整路径
+        file_path = os.path.join(data_path, file_name)
+
+        # 如果是文件，直接删除
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    print("所有文件已成功删除。")

@@ -11,7 +11,8 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data import DataLoader
 #utils.py
-from utils import LoadDataset,data_loader_test, draw_curve, generate_sample_label_set, load_sample_label_set, get_dataloader
+from utils import *
+from dataset import *
 import numpy as np
 import random
 from train_options import parser
@@ -36,19 +37,10 @@ def seed_torch(seed=2022):
 seed_torch(2022)
 
 
-sample_exists=False
 data_path = "Data/CLCD_samples"
 
 #删除samples的代码
-files = os.listdir(data_path)
-for file_name in files:
-    # 构建完整路径
-    file_path = os.path.join(data_path, file_name)
-
-    # 如果是文件，直接删除
-    if os.path.isfile(file_path):
-        os.remove(file_path)
-print("所有文件已成功删除。")
+delete_all_samples(data_path)
 
 is_exists = os.path.exists(os.path.join(data_path, 'training_samples.npy'))
 
@@ -65,9 +57,9 @@ else:
 
 
 train_dataset, val_dataset, test_dataset = get_dataloader(training_samples, training_labels, val_samples, val_labels, test_samples, test_labels)
-train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=128, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=128, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=256, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=256, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=256, shuffle=True)
 # data_loader_test(train_dataloader)
 
 # 选择和加载预训练的ResNet模型
@@ -91,8 +83,13 @@ train_acc_list = []
 val_loss_list = []
 val_acc_list = []
 
-start_time = time.time()
-for epoch in range(1):
+
+for epoch in range(10):
+    if epoch == 0:
+        start_time = time.time()
+    if epoch == 1:
+        end_time = time.time()
+        print(f"time for one epoch is:{end_time-start_time}")
     """ Training  """
     print(f"Epoch {epoch + 1}\n-------------------------------")
     print("learning rate is set as: {}".format(optimizer.param_groups[0]['lr']))

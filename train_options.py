@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description='Training Change Detection Network'
 
 # training parameters
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
-parser.add_argument('--batchsize', default=2, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=128, type=int, help='batchsize')
 parser.add_argument('--val_batchsize', default=16, type=int, help='batchsize for validation')
 parser.add_argument('--num_workers', default=24, type=int, help='num of workers')
 parser.add_argument('--n_class', default=2, type=int, help='number of class')

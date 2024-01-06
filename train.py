@@ -13,7 +13,7 @@ def train(dataloader, model, loss_fn, optimizer, device):
     for batch,(X,y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         X = X.type(torch.cuda.FloatTensor)
-        print(X.shape)
+        # print(X.shape)
         pred=model(X)
         # print(pred.shape)
 
